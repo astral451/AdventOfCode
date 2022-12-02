@@ -40,7 +40,17 @@ def group_by_elf(calorie_data:list) ->dict:
 
     return elf_data, value_data 
             
-        
+
+def locate_top_elf(elf_data:dict, value_data:dict):
+    """
+    Given the elf data we find first the top value, secondly the elf(s) that might have that value
+    """
+
+    top_value = sorted(list(value_data.keys()))
+    top_value = top_value[-1]
+
+    top_elf = value_data[top_value]
+    return top_elf, top_value
 
 
 if __name__ == "__main__":
@@ -48,6 +58,8 @@ if __name__ == "__main__":
     folder_path = pathlib.Path(file_path.parent, 'elf_calorie_data.txt')
     calorie_data = load_data_file(folder_path.as_posix())
 
-    elf_data, value_data = group_by_elf(calorie_data.split())
+    elf_data, value_data = group_by_elf(calorie_data.split('\n'))
+    top_elf, top_value = locate_top_elf(elf_data, value_data)
+    print('Elf {} has {} calories of candy.'.format(top_elf, top_value))
 
-    print(elf_data)
+
