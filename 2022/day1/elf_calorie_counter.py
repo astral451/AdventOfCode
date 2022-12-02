@@ -53,6 +53,17 @@ def locate_top_elf(elf_data:dict, value_data:dict):
     return top_elf, top_value
 
 
+def locate_top_three_elves(elf_data:dict, value_data:dict):
+    """
+    Take the same data and reverse sort the values and sum them.
+    """
+
+    sorted_values = sorted(list(value_data.keys()),reverse=True)
+    top_values = sorted_values[0:3]
+    return top_values
+
+
+
 if __name__ == "__main__":
     file_path = pathlib.Path(__file__)
     folder_path = pathlib.Path(file_path.parent, 'elf_calorie_data.txt')
@@ -62,4 +73,6 @@ if __name__ == "__main__":
     top_elf, top_value = locate_top_elf(elf_data, value_data)
     print('Elf {} has {} calories of candy.'.format(top_elf, top_value))
 
+    top_three_total = sum(locate_top_three_elves(elf_data, value_data))
+    print(top_three_total)
 
