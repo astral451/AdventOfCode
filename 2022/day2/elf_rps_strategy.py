@@ -51,8 +51,66 @@ ASSUMED_VALUES = {
     'Draw' : 3 
 }
 
+VALUES_DATA = {
+    'Rock'      : 1,
+    'Scissors'  : 3,
+    'Paper'     : 2,
+    'Win'       : 6,
+    'Lose'      : 0,
+    'Draw'      : 3 
+}
 
-def process_hand(line):
+PLAYSTYLE_PART2 = {
+    'A' : 'Rock',
+    'B' : 'Paper',
+    'C' : 'Scissors',
+    'X' : 'Lose',
+    'Y' : 'Draw',
+    'Z' : 'Win',
+    # Opponent Hand : [ Losing Throw, Winning Throw ]
+    'Rock' : ['Scissors', 'Paper'],
+    'Scissors' : ['Paper', 'Rock'],
+    'Paper' : ['Rock', 'Scissors'],
+}
+
+
+def process_hand_corrected(line):
+    print(line)
+    opponent, you = line.split(' ') 
+
+    opponent_hand = PLAYSTYLE_PART2[opponent]
+    opponent_value = VALUES_DATA[opponent_hand]
+
+    your_status = PLAYSTYLE_PART2[you]
+
+    opponent_score = 0
+    your_score = 0 
+
+    if your_status == 'Draw':
+        your_value = opponent_value
+        your_hand = opponent_hand
+        opponent_score = opponent_value + VALUES_DATA['Draw']
+        your_score = your_value + VALUES_DATA['Draw']
+
+    elif your_status == 'Win':
+        your_hand = PLAYSTYLE_PART2[opponent_hand][1]
+        your_value = VALUES_DATA[your_hand]
+        your_status = 'Win'
+        opponent_score = opponent_value + VALUES_DATA['Lose']
+        your_score = your_value + VALUES_DATA['Win']
+
+    else:
+        your_hand = PLAYSTYLE_PART2[opponent_hand][0]
+        your_value = VALUES_DATA[your_hand]
+        opponent_score = opponent_value + VALUES_DATA['Win']
+        your_score = your_value + VALUES_DATA['Lose']
+
+    print('They threw {}, you threw {}, you {}'.format(opponent_hand,your_hand,your_status))
+    print('opponent_score {}, your_score {}'.format(opponent_score, your_score))
+    return opponent_score, your_score  
+
+
+def process_hand_assumed(line):
     
     print(line)
     opponent, you = line.split(' ') 
@@ -63,7 +121,7 @@ def process_hand(line):
     opponent_score = 0
     your_score = 0 
     your_status = ''
-    
+
     if opponent_hand == your_hand:
         your_status = 'Draw'
         opponent_score = opponent_value + ASSUMED_VALUES['Draw']
@@ -87,6 +145,7 @@ def process_hand(line):
 if __name__ == "__main__":
     file_path = pathlib.Path(__file__)
     folder_path = pathlib.Path(file_path.parent, 'elf_rps_strategy_data.txt')
+    #folder_path = pathlib.Path(file_path.parent, 'temp_strat_data.txt')
  
     data_file = load_data_file(folder_path.as_posix())
     data_hands = data_file.split('\n')
@@ -94,7 +153,8 @@ if __name__ == "__main__":
     opponent_score = 0 
     for hand in data_hands:
         if hand:
-            op_sc, yr_sc = process_hand(hand)
+            #op_sc, yr_sc = process_hand_assumed(hand)
+            op_sc, yr_sc = process_hand_corrected(hand)
             your_score += yr_sc
             opponent_score += op_sc
             
