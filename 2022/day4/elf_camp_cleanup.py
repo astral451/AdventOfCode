@@ -44,7 +44,8 @@ if __name__ == "__main__":
     folder_path = pathlib.Path(file_path.parent, file_name)
     sections = load_data_file(folder_path.as_posix()).split('\n')
 
-    overlapping_data = {}
+    complete_overlapping_data = {}
+    partial_overlapping_data = {}
     for idx, section in enumerate(sections):
         if not section:
             continue
@@ -52,13 +53,20 @@ if __name__ == "__main__":
 
         section_intersections = set(section_ranges[0]).intersection(section_ranges[1])
         if len(section_intersections) == min(len(section_ranges[0]),len(section_ranges[1])):
-            overlapping_data[idx] = {
+            complete_overlapping_data[idx] = {
                 'section' : section,
                 'ranges'  : section_ranges
             }
-            print(section, section_ranges, section_intersections)
+        
+        if len(section_intersections) > 0:
+            partial_overlapping_data[idx] = { 
+                'section' : section,
+                'ranges'  : section_ranges
+            }
     
-    print('Number of sections with complete overlap {}'.format(len(overlapping_data.keys())))
+    print('Number of sections with complete overlap {}'.format(len(complete_overlapping_data.keys())))
+
+    print('Number of sections with partial overlap {}'.format(len(partial_overlapping_data.keys())))
 
 
 
