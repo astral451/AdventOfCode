@@ -33,6 +33,10 @@ def load_data_file(file_path):
 
 
 def get_next_advancement_point(chunk, marker_length):
+    """
+    Look at the chunk and find the next space to jump to.  This looks
+    within the chunk for simultaneous characters and jumps past them.
+    """
 
     if len(set(chunk)) == marker_length:
         return 0
@@ -51,6 +55,11 @@ def get_next_advancement_point(chunk, marker_length):
 
 
 def process_signal_for_first_marker(signal, marker_length):
+    """
+    The Main function to process signal strings.  Pass in the full string and the length
+    that needs to be unique characters.
+    """
+
     first_marker_found = False
     signal_length = len(signal)
 
@@ -59,16 +68,16 @@ def process_signal_for_first_marker(signal, marker_length):
 
         if idx+marker_length<= signal_length:
             chunk = signal[idx:idx+marker_length]
-            next_advancement_point = get_next_advancement_point(chunk, marker_length)
-            if not next_advancement_point: # equivalant to 0
+            next_adv_pnt = get_next_advancement_point(chunk, marker_length)
+            if not next_adv_pnt: # equivalant to 0
                 first_marker_found = True
-            idx += next_advancement_point
+            idx += next_adv_pnt
         else:
             first_marker_found = True
 
-    marker_string = signal[idx:idx+marker_length]
+    found_marker_string = signal[idx:idx+marker_length]
 
-    return idx, marker_string
+    return idx, found_marker_string
 
 
 if __name__ == "__main__":
