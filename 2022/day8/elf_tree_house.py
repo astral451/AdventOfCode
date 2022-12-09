@@ -23,7 +23,12 @@ def load_data_file(file_path):
 
     return file_data
 
+
 def grid_from_data(all_tree_data):
+    """
+    Create a grid from the incoming numbers    
+    """
+
     data_grid_width = len(all_tree_data[0])
     data_grid_height = len(all_tree_data)
     total_grid_count = data_grid_width * data_grid_height
@@ -33,7 +38,14 @@ def grid_from_data(all_tree_data):
 
     return data_grid, total_grid_count, data_grid_height, data_grid_width
 
+
 def check_vertical_values(tree_data, h_range, w_range, h_idx, w_idx):
+    """
+    Moves through the vertical access from the grid position.  This will be expensive
+    in large grids as it does not early out once a block is found. It could be
+    better.    
+    """
+
     tree_height = tree_data[h_idx][w_idx]
     neg_vis = True
     pos_vis = True
@@ -55,6 +67,11 @@ def check_vertical_values(tree_data, h_range, w_range, h_idx, w_idx):
 
 
 def check_horizontal_values(tree_data, h_range, w_range, h_idx, w_idx):
+    """
+    A complete copy of _vertical_ version.  I really don't like this and want
+    to genericize it.  All I'm doing is swapping which element I loop over 
+    """
+
     tree_height = tree_data[h_idx][w_idx]
     neg_vis = True
     pos_vis = True
@@ -76,10 +93,15 @@ def check_horizontal_values(tree_data, h_range, w_range, h_idx, w_idx):
 
 
 def look_for_visible_trees(tree_data, height, width):
+    """
+    Looks through the interior trees looking for the parts of the forest
+    with visibility.  It skips the perimeter 
+    """
+
     central_core_height_indexs = range(1, height - 1)
     central_core_width_indexs = range(1, width - 1)
     hidden_tree_count = 0
-    hidden_tree_data = []
+    hidden_tree_data = [[[] for y in range(width)] for x in range(height)]
 
     for h_idx in central_core_height_indexs:
         for w_idx in central_core_width_indexs:
@@ -90,27 +112,34 @@ def look_for_visible_trees(tree_data, height, width):
                 h_idx,
                 w_idx
             )
-            h_data, l_vis, r_vis = check_horizontal_values(
+            w_data, l_vis, r_vis = check_horizontal_values(
                 tree_data,
                 range(height),
                 range(width),
                 h_idx,
                 w_idx
             )
+            hidden_tree_data[h_idx][w_idx] = (h_data, w_data)
             if any([u_vis, d_vis, l_vis, r_vis]):
                 print(h_idx, w_idx, 'Is visible')
             else:
                 hidden_tree_count += 1
                 print(h_idx, w_idx, 'Is Hidden')
 
-    return hidden_tree_count
+    return hidden_tree_count, hidden_tree_data
 
 
 def calculate_scenic_score(tree_data, height, width, h_idx, w_idx):
+    """
+    In this method that covers one item within the whole grid, this will
+    work through each items looking up down left right for trees at or below
+    the starting height. This uses reverse ranges to count outwards from
+    the central tree.  Once it hits a block it quits
+    """
 
-    up_range = range(h_idx, 0, -1)
+    up_range = range(h_idx, -1, -1)
     down_range = range(h_idx, height)
-    left_range = range(w_idx, 0, -1)
+    left_range = range(w_idx, -1, -1)
     right_range = range(w_idx, width)
 
     current_tree_height = tree_data[h_idx][w_idx]
@@ -120,9 +149,8 @@ def calculate_scenic_score(tree_data, height, width, h_idx, w_idx):
         for h in h_range:
             if h == h_idx:
                 continue
-            if tree_data[h][w_idx] <= current_tree_height:
-                count += 1
-            else:
+            count += 1
+            if tree_data[h][w_idx] >= current_tree_height:
                 break
         scenic_scores.append(count)
 
@@ -131,9 +159,8 @@ def calculate_scenic_score(tree_data, height, width, h_idx, w_idx):
         for w in w_range:
             if w == w_idx:
                 continue
-            if tree_data[h_idx][w] <= current_tree_height:
-                count += 1
-            else:
+            count += 1
+            if tree_data[h_idx][w] >= current_tree_height:
                 break
         scenic_scores.append(count)
 
@@ -146,6 +173,9 @@ def calculate_scenic_score(tree_data, height, width, h_idx, w_idx):
 
 
 def get_scenic_score(tree_data, h_size, w_size):
+    """
+    A wrapper for the actual work.  Essentially just the outside x,y for loop
+    """
 
     score_data = [[1 for j in range(w_size)] for i in range(h_size)]
     h_range = range(h_size)
@@ -157,16 +187,23 @@ def get_scenic_score(tree_data, h_size, w_size):
     for row in score_data:
         print(row)
 
+    return score_data
+
+
 if __name__ == "__main__":
 
     file_name = 'elf_tree_house_data.txt'
-    file_name = 'temp_tree_house.txt'
+    # file_name = 'temp_tree_house.txt'
     file_path = pathlib.Path(__file__)
     folder_path = pathlib.Path(file_path.parent, file_name)
     tree_data = load_data_file(folder_path.as_posix()).split('\n')[:-1]
 
     tree_grid, total_trees, g_height, g_width = grid_from_data(tree_data)
-    hidden_tree_count = look_for_visible_trees(tree_grid, g_height, g_width)
+    hidden_tree_count, hidden_tree_data = look_for_visible_trees(tree_grid, g_height, g_width)
     print(f'Visible trees : {total_trees-hidden_tree_count}')
 
-    get_scenic_score(tree_grid, g_height, g_width)
+    all_scores = get_scenic_score(tree_grid, g_height, g_width)
+    top_score = 0
+    for row in all_scores:
+        top_score = max(top_score, max(row))
+    print(f'Top score in all trees is {top_score}')
