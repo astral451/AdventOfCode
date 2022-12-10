@@ -35,7 +35,7 @@ def parse_instructions(file_data):
 
     return instructions
 
-
+ROPE_ASCII = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@']
 
 class Rope_Simulation():
     def __init__(self, number_of_knots):
@@ -101,10 +101,11 @@ class Rope_Simulation():
                     if address in p:
                         dot += 1 
                         dot = min(9, dot)
-                if dot == 0:
-                    dot = '.'
-                else:
-                    dot = str(dot)
+                dot = ROPE_ASCII[dot]
+                # if dot == 0:
+                #     dot = ' '
+                # else:
+                #     dot = ROPE_ASCII[dot]
                 dots += dot 
             print(dots)
             file_string += dots 
