@@ -38,13 +38,17 @@ def parse_instructions(file_data):
 
 
 class Rope_Simulation():
-    def __init__(self):
+    def __init__(self, number_of_knots):
         self.head_pos = [0, 0]
         self.head_positions = dict()
         self.head_positions[tuple(self.head_pos)] = 1
-        self.tail_pos = [0, 0]
-        self.tail_positions = dict()
-        self.tail_positions[tuple(self.tail_pos)] = 1
+        
+        self.rope_pos = [[0, 0] for i in range(number_of_knots)]
+        self.knot_positions = list()
+        for k in self.rope_pos:
+            pos_dict = { tuple([0,0]) : 1 } 
+            self.knot_positions.append(pos_dict)
+            
 
         self.vectors = {
             'R' : tuple([ 0,  1]),
@@ -73,72 +77,72 @@ class Rope_Simulation():
 
 
     def _print_stored_positions(self):
-        min_head = [0,0]
-        max_head = [0,0]
-        min_tail = [0,0]
-        max_tail = [0,0]
+        file_string = ''
+        low_corner = [0,0]
+        high_corner = [0,0]
 
-        for x, y in self.head_positions:
-            min_head[0] = min(x, min_head[0])
-            min_head[1] = min(y, min_head[1])
-            max_head[0] = max(x, max_head[0])
-            max_head[1] = max(y, max_head[1])
-        for x, y in self.tail_positions:
-            min_tail[0] = min(x, min_tail[0])
-            min_tail[1] = min(y, min_tail[1])
-            max_tail[0] = max(x, max_tail[0])
-            max_tail[1] = max(y, max_tail[1])
+        for k in self.knot_positions:
+            for p in k:
+                low_corner[0] = min(p[0],low_corner[0])
+                low_corner[1] = min(p[1],low_corner[1]) 
+                high_corner[0] = max(p[0], high_corner[0])
+                high_corner[1] = max(p[1], high_corner[1])
 
-        for i in range(min_head[0],max_head[0]):
+        #this offset of adding one, gets to the last row in the print
+        high_corner[0] += 1
+        high_corner[1] += 1
+
+        for i in range(low_corner[0],high_corner[0]):
             dots = ''
-            for j in range(min_head[1],max_head[1]):
+            for j in range(low_corner[1],high_corner[1]):
                 address = tuple([i,j])
-                if address in self.tail_positions:
-                    dots += '#'
+                dot = 0 
+                for p in self.knot_positions:
+                    if address in p:
+                        dot += 1 
+                        dot = min(9, dot)
+                if dot == 0:
+                    dot = '.'
                 else:
-                    dots += '.'
+                    dot = str(dot)
+                dots += dot 
             print(dots)
+            file_string += dots 
+            file_string += '\n'
+        return file_string
 
 
-    def _translate_in_direction(self, unit_vector, distance, pawn='head'):
+    def _translate_in_direction(self, unit_vector, distance, pawn_idx=0):
 
-        if pawn == 'head':
-            _obj = self.head_pos
-        else:
-            _obj = self.tail_pos
+        _obj = self.rope_pos[pawn_idx]
 
         x = _obj[0] + unit_vector[0]
         y = _obj[1] + unit_vector[1]
         _obj = [x, y]
-        if pawn == 'head':
-            self.head_pos = _obj
-            _idx = tuple(self.head_pos)
-            stored_pos = self.head_positions.setdefault(_idx, 0)
-            stored_pos += 1
-            self.head_positions[_idx] = stored_pos
-        else:
-            self.tail_pos = _obj
-            _idx = tuple(self.tail_pos)
-            stored_pos = self.tail_positions.setdefault(_idx, 0)
-            stored_pos += 1
-            self.tail_positions[_idx] = stored_pos
+
+        self.rope_pos[pawn_idx] = _obj
+        _idx = tuple(self.rope_pos[pawn_idx])
+        stored_pos = self.knot_positions[pawn_idx].setdefault(_idx, 0)
+        stored_pos += 1
+        self.knot_positions[pawn_idx][_idx] = stored_pos
 
 
-    def _head_to_tail_vector(self):
-        hx, hy = self.head_pos
-        tx, ty = self.tail_pos
+    def _head_to_tail_vector(self, h_idx, t_idx):
+        hx, hy = self.rope_pos[h_idx]
+        tx, ty = self.rope_pos[t_idx]
         vx = hx - tx
         vy = hy - ty
         distance = math.sqrt(math.pow(vx, 2) + math.pow(vy,2))
         return tuple([vx, vy]), distance
 
 
-    def _translate_tail(self):
-        vector, distance = self._head_to_tail_vector()
-        if distance > math.sqrt(2):
-            # this means it's just beyond the diagonal we care about
-            direction_of_travel = self._get_direction_of_travel(vector)
-            self._translate_in_direction(direction_of_travel, 1, pawn='tail')
+    def _translate_rope(self):
+        for i in range(1,len(self.rope_pos)):
+            vector, distance = self._head_to_tail_vector(i-1, i)
+            if distance > math.sqrt(2):
+                # this means it's just beyond the diagonal we care about
+                direction_of_travel = self._get_direction_of_travel(vector)
+                self._translate_in_direction(direction_of_travel, 1, pawn_idx=i)
 
 
     def move_head(self, direction, distance):
@@ -146,25 +150,29 @@ class Rope_Simulation():
 
             direction_tuple = self.vectors[direction] * distance
             self._translate_in_direction(direction_tuple, 1)
-            self._translate_tail()
+            self._translate_rope()
             # self._print_positions()
 
 
 if __name__ == "__main__":
 
     file_name = 'elf_rope_bridge_data.txt'
-    # file_name = 'temp_elf_rope_bridge.txt'
+    # file_name = 'temp_elf_rope_bridge_larger.txt'
     file_path = pathlib.Path(__file__)
     folder_path = pathlib.Path(file_path.parent, file_name)
     file_data = load_data_file(folder_path.as_posix()).split('\n')
 
     all_instructions = parse_instructions(file_data)
-    rs = Rope_Simulation()
+    rs = Rope_Simulation(10)
 
     for inst in all_instructions:
         direction = inst[0]
         distance =  inst[1]
 
         rs.move_head(direction, distance)
-    rs._print_stored_positions()
-    print('count:{}'.format(len(rs.tail_positions.keys())))
+    # fun novelty to write this out to disk
+    file_name = pathlib.Path(pathlib.Path(__file__).parent.resolve(), 'path_output.txt')
+    with open(file_name, 'w') as fio:
+        fio.write(rs._print_stored_positions())
+
+    print('count:{}'.format(len(rs.knot_positions[-1].keys())))
