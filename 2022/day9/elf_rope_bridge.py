@@ -68,7 +68,8 @@ class Rope_Simulation():
 
 
     def _print_positions(self):
-        print(self.head_pos, self.tail_pos)
+        vec, dist = self._head_to_tail_vector()
+        print(self.head_pos, self.tail_pos, vec, dist)
 
 
     def _print_stored_positions(self):
@@ -128,7 +129,7 @@ class Rope_Simulation():
         tx, ty = self.tail_pos
         vx = hx - tx
         vy = hy - ty
-        distance = math.sqrt(abs(vx^2 + vy^2))
+        distance = math.sqrt(math.pow(vx, 2) + math.pow(vy,2))
         return tuple([vx, vy]), distance
 
 
@@ -146,13 +147,13 @@ class Rope_Simulation():
             direction_tuple = self.vectors[direction] * distance
             self._translate_in_direction(direction_tuple, 1)
             self._translate_tail()
-            self._print_positions()
+            # self._print_positions()
 
 
 if __name__ == "__main__":
 
     file_name = 'elf_rope_bridge_data.txt'
-    file_name = 'temp_elf_rope_bridge.txt'
+    # file_name = 'temp_elf_rope_bridge.txt'
     file_path = pathlib.Path(__file__)
     folder_path = pathlib.Path(file_path.parent, file_name)
     file_data = load_data_file(folder_path.as_posix()).split('\n')
@@ -165,5 +166,5 @@ if __name__ == "__main__":
         distance =  inst[1]
 
         rs.move_head(direction, distance)
-    print('count:{}'.format(len(rs.tail_positions.keys())))
     rs._print_stored_positions()
+    print('count:{}'.format(len(rs.tail_positions.keys())))
