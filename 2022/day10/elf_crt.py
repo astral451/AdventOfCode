@@ -1,4 +1,3 @@
-'''This is boiler plate code to copy paste into new days.'''
 import pathlib
 
 
