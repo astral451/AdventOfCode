@@ -27,6 +27,25 @@ def load_data_file(file_path):
     return file_data
 
 
+ALL_LINKS = []
+
+class Link:
+    def __init__(self, value, x, y):
+        self.value = value
+        self.coords = [x,y]
+        self.parents = []
+        self.children = []
+        ALL_LINKS.append(self)
+
+    def add_child(self, link):
+        self.children.append(link)
+        link.add_parent(self)
+
+    def add_parent(self, link):
+        self.parents.append(link)
+
+    def __repr__(self):
+        return '<Link> {}, {}'.format(self.coords, self.value)
 
 
 class Grid:
@@ -34,8 +53,9 @@ class Grid:
         self.grid = []
         self.number_grid = []
         self.start_cell = None
+        self.start_link = None
         self.end_cell = None
-        self.paths = []
+        self.visited_cells = []
 
         self.directions = ['UP', 'LEFT', 'DOWN', 'RIGHT']
 
@@ -47,7 +67,7 @@ class Grid:
             n_line = []
             if 'S' in line:
                 h_idx = line.index('S')
-                self.start_cell =[idx, h_idx]
+                self.start_cell = [idx, h_idx]
             if 'E' in line:
                 h_idx = line.index('E')
                 self.end_cell = [idx, h_idx]
@@ -75,29 +95,35 @@ class Grid:
                 continue # this isn't a big deal, just not report the neighbor
 
         return neighbors
-            
 
-    def find_path(self, current_path=list(), start_cell=None):
-        if not start_cell:
+
+    def find_path(self, current_link=None):
+        if not current_link:
             start_cell = self.start_cell
-
-        current_value = self.number_grid[start_cell[0]][start_cell[1]]
-        current_path.append([self.start_cell, current_value])
+            current_value = self.number_grid[start_cell[0]][start_cell[1]]
+            link = Link(current_value, *start_cell)
+            self.start_link = link
+            self.visited_cells.append(start_cell)
+        else:
+            start_cell = current_link.coords
+            link = current_link
 
         local_neighbors = self.find_local_neighbors(start_cell)
         possible_paths = []
         for value, neighbor in local_neighbors:
-            if neighbor: # IE it's not None
-                _value = self.number_grid[start_cell[0]][start_cell[1]]                
-                diff = _value - current_value
+            if neighbor and neighbor not in self.visited_cells: # IE it's not None
+                # _value = self.number_grid[start_cell[0]][start_cell[1]]
+                diff = value - link.value
                 if diff == 1 or diff == 0:
-                    possible_paths.append([neighbor, _value])
-        
-        for path in possible_paths:
+                    _n_link = Link(value,neighbor[0], neighbor[1])
+                    self.visited_cells.append(neighbor)
+                    link.add_child(_n_link)
+                    possible_paths.append(_n_link)
+
+        for _l in possible_paths:
             # is this going to branch?
-            current_path = self.find_path(current_path=current_path, start_cell=path[0])
-        
-        return current_path
+            self.find_path(current_link=_l)
+
 
         
         
@@ -119,3 +145,5 @@ if __name__ == "__main__":
 
     grid.find_path()
 
+    for link in ALL_LINKS:
+        print(link.value, len(link.parents))
