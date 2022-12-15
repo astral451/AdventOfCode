@@ -27,25 +27,6 @@ def load_data_file(file_path):
     return file_data
 
 
-ALL_LINKS = []
-
-class Link:
-    def __init__(self, value, x, y):
-        self.value = value
-        self.coords = [x,y]
-        self.parents = []
-        self.children = []
-        ALL_LINKS.append(self)
-
-    def add_child(self, link):
-        self.children.append(link)
-        link.add_parent(self)
-
-    def add_parent(self, link):
-        self.parents.append(link)
-
-    def __repr__(self):
-        return '<Link> {}, {}'.format(self.coords, self.value)
 
 
 class Grid:
@@ -53,9 +34,8 @@ class Grid:
         self.grid = []
         self.number_grid = []
         self.start_cell = None
-        self.start_link = None
         self.end_cell = None
-        self.visited_cells = []
+        self.visited_cells = {}
 
         self.directions = ['UP', 'LEFT', 'DOWN', 'RIGHT']
 
@@ -97,32 +77,26 @@ class Grid:
         return neighbors
 
 
-    def find_path(self, current_link=None):
-        if not current_link:
-            start_cell = self.start_cell
-            current_value = self.number_grid[start_cell[0]][start_cell[1]]
-            link = Link(current_value, *start_cell)
-            self.start_link = link
-            self.visited_cells.append(start_cell)
-        else:
-            start_cell = current_link.coords
-            link = current_link
+    def find_path(self, current_start, path_idx=0):
+        start_cell = current_start 
+        if start_cell == self.end_cell:
+            return
+        current_value = self.number_grid[start_cell[0]][start_cell[1]]
+        cells = self.visited_cells.setdefault(path_idx, []) 
+        cells.append(start_cell)
+        self.visited_cells[path_idx] = cells
 
         local_neighbors = self.find_local_neighbors(start_cell)
         possible_paths = []
+        idx =-1
         for value, neighbor in local_neighbors:
-            if neighbor and neighbor not in self.visited_cells: # IE it's not None
-                # _value = self.number_grid[start_cell[0]][start_cell[1]]
-                diff = value - link.value
+            if neighbor and neighbor not in self.visited_cells[path_idx]: # IE it's not None
+                _value = self.number_grid[start_cell[0]][start_cell[1]]
+                diff = value - _value
                 if diff == 1 or diff == 0:
-                    _n_link = Link(value,neighbor[0], neighbor[1])
-                    self.visited_cells.append(neighbor)
-                    link.add_child(_n_link)
-                    possible_paths.append(_n_link)
-
-        for _l in possible_paths:
-            # is this going to branch?
-            self.find_path(current_link=_l)
+                    idx += 1
+                    new_idx = path_idx + idx
+                    self.find_path(neighbor, path_idx=new_idx)
 
 
         
@@ -143,7 +117,6 @@ if __name__ == "__main__":
     
     grid.create_grid(heatmap)
 
-    grid.find_path()
+    grid.find_path(grid.start_cell)
+    print('test')
 
-    for link in ALL_LINKS:
-        print(link.value, len(link.parents))
